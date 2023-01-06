@@ -1,0 +1,2 @@
+# rsshub-lite
+RSSHub Lite
