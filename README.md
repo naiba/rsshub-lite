@@ -4,7 +4,17 @@ Crawl web pages to RSS feeds.
 
 ## Guide
 
-### Docker compose
+### Layout
+
+```shell
+root@localhost:/root/rsshub-lite$ tree
+.
+├── data
+│   └── config.json
+└── docker-compose.yml
+```
+
+### docker-compose.yml
 
 ```yaml
 version: '3.4'
@@ -17,17 +27,7 @@ services:
         - ./data:/rsshub-lite/data
 ```
 
-### Config file
-
-```shell
-root@localhost:/root/rsshub-lite$ tree
-.
-├── data
-│   └── config.json
-└── docker-compose.yml
-```
-
-config.json
+### config.json
 
 ```json
 {
@@ -44,7 +44,7 @@ config.json
             "delay": 3600
         }
     ],
-    "username": "naiba", # Enable HTTP Basic Auth if not empty
+    "username": "naiba", /* Enable HTTP-Basic-Auth for /feeds/* if not empty */
     "password": "abian",
     "max_items": 25
 }
