@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 
 	cbp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/html"
 	"github.com/gorilla/feeds"
@@ -33,16 +34,14 @@ var config model.Config
 var jobManager *cron.Cron
 var feedLimiter singleflight.Group
 
-func init() {
+func main() {
 	configRes := getConfig()
 	if configRes.IsError() {
 		panic(configRes.Error())
 	}
 	config = configRes.MustGet()
 	feedList = loadCache()
-}
 
-func main() {
 	if err := initJobs(); err != nil {
 		panic(err)
 	}
@@ -51,7 +50,6 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Use(logger.New())
 	app.Use(recover.New())
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -137,7 +135,7 @@ func initJobs() error {
 
 		fn := func() {
 			if err := refreshFeed(&source); err != nil {
-				log.Printf("refresh feed %s failed: %s\n", source.Slug, err)
+				log.Printf("[error] refresh feed %s failed: %s\n", source.Name, err)
 			}
 		}
 
@@ -158,6 +156,11 @@ func refreshFeed(source *model.Source) error {
 	if items, err = matchFeedItems(source.Url, source, make([]*feeds.Item, 0)); err != nil {
 		return err
 	}
+
+	if len(items) == 0 {
+		return fmt.Errorf("[error] %s no items found", source.Name)
+	}
+
 	feedListLock.Lock()
 	defer feedListLock.Unlock()
 	feedList[source.Slug].Items = items
@@ -179,7 +182,7 @@ func matchFeedItems(targetUrl string, source *model.Source, items []*feeds.Item)
 		return items, err
 	}
 	if resp.StatusCode != 200 {
-		return items, fmt.Errorf("status code error: %d %s", resp.StatusCode, resp.Status)
+		return items, fmt.Errorf("[error] %s -> %s status code: %d %s", source.Name, targetUrl, resp.StatusCode, resp.Status)
 	}
 	defer resp.Body.Close()
 
@@ -202,7 +205,9 @@ func matchFeedItems(targetUrl string, source *model.Source, items []*feeds.Item)
 			descSel := s.Find(source.DescriptionSelector).First()
 			item.Description = descSel.Text()
 		}
-		items = append(items, &item)
+		if len(item.Title) > 0 && len(item.Link.Href) > 0 {
+			items = append(items, &item)
+		}
 		return len(items) < config.MaxItems
 	})
 
@@ -214,9 +219,34 @@ func matchFeedItems(targetUrl string, source *model.Source, items []*feeds.Item)
 		matcher := regexp.MustCompile(source.NextPageMatch)
 		matches := matcher.FindStringSubmatch(body)
 		if len(matches) > 1 {
-			return matchFeedItems(matches[1], source, items)
+			nextPageUrl := matches[1]
+			return matchFeedItems(mergeUrl(targetUrl, nextPageUrl), source, items)
 		}
 	}
 
 	return items, err
+}
+
+func mergeUrl(base, target string) string {
+	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
+		return target
+	}
+	if strings.HasPrefix(target, "//") {
+		u, err := url.Parse(base)
+		if err != nil {
+			return target
+		}
+		return u.Scheme + ":" + target
+	}
+	if strings.HasPrefix(target, "/") {
+		u, err := url.Parse(base)
+		if err != nil {
+			return target
+		}
+		return u.Scheme + "://" + u.Host + target
+	}
+	if strings.HasSuffix(base, "/") {
+		return base + target
+	}
+	return base + "/" + target
 }
