@@ -23,10 +23,11 @@ services:
 root@localhost:/root/rsshub-lite$ tree
 .
 ├── data
-│   ├── cache.json
 │   └── config.json
 └── docker-compose.yml
 ```
+
+config.json
 
 ```json
 {
