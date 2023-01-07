@@ -44,7 +44,7 @@ services:
             "delay": 3600
         }
     ],
-    "username": "naiba", /* Enable HTTP-Basic-Auth for /feeds/* if not empty */
+    "username": "naiba", /* Enable HTTP-Basic-Auth for /feed/* if not empty */
     "password": "abian",
     "max_items": 25
 }
