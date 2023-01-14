@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,6 +21,7 @@ import (
 	"github.com/gorilla/feeds"
 	"github.com/robfig/cron/v3"
 	"github.com/samber/mo"
+	"github.com/tidwall/gjson"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/naiba/rsshub-lite/internal/model"
@@ -186,6 +188,50 @@ func matchFeedItems(targetUrl string, source *model.Source, items []*feeds.Item)
 	}
 	defer resp.Body.Close()
 
+	switch strings.Split(resp.Header.Get("Content-Type"), ";")[0] {
+	case "application/json":
+		return procJsonResponse(targetUrl, resp, source, items)
+	case "text/html":
+		return procHtmlResponse(targetUrl, resp, source, items)
+	}
+
+	return items, fmt.Errorf("[error] %s -> %s unsupported content type: %s", source.Name, targetUrl, resp.Header.Get("Content-Type"))
+}
+
+func procJsonResponse(targetUrl string, resp *http.Response, source *model.Source, items []*feeds.Item) ([]*feeds.Item, error) {
+	contentBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return items, err
+	}
+	content := string(contentBytes)
+	gjson.Get(content, source.ItemSelector).ForEach(func(key, value gjson.Result) bool {
+		var item feeds.Item
+		if len(source.TitleSelector) > 0 {
+			item.Title = value.Get(source.TitleSelector).String()
+		}
+		if len(source.LinkSelector) > 0 {
+			item.Link = &feeds.Link{Href: value.Get(source.LinkSelector).String()}
+		}
+		if len(source.DescriptionSelector) > 0 {
+			item.Description = value.Get(source.DescriptionSelector).String()
+		}
+		if len(item.Title) > 0 && len(item.Link.Href) > 0 {
+			items = append(items, &item)
+		}
+		return len(items) < config.MaxItems
+	})
+
+	if len(items) < config.MaxItems && len(source.NextPageMatch) > 0 {
+		res := gjson.Get(content, source.NextPageMatch)
+		if res.Exists() {
+			return matchFeedItems(mergeUrl(targetUrl, res.String()), source, items)
+		}
+	}
+
+	return items, nil
+}
+
+func procHtmlResponse(targetUrl string, resp *http.Response, source *model.Source, items []*feeds.Item) ([]*feeds.Item, error) {
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return items, err

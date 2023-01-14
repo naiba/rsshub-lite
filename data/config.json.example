@@ -10,6 +10,16 @@
             "link_selector": "div.summary>h2.title>a",
             "next_page_match": "class=\"page-link\" href=\"(.*)\" rel=\"next\"",
             "delay": 3600
+        },
+        {
+            "name": "Ethernaut - JSON Example",
+            "slug": "ethernaut",
+            "url": "https://cdn.jsdelivr.net/gh/OpenZeppelin/ethernaut@master/client/src/gamedata/gamedata.json",
+            "item_selector": "levels",
+            "title_selector": "name",
+            "description_selector": "author",
+            "link_selector": "levelContract",
+            "delay": 3600
         }
     ],
     "username": "naiba",
