@@ -251,7 +251,7 @@ func procHtmlResponse(targetUrl string, resp *http.Response, source *model.Sourc
 			descSel := s.Find(source.DescriptionSelector).First()
 			item.Description = descSel.Text()
 		}
-		if len(item.Title) > 0 && len(item.Link.Href) > 0 {
+		if len(item.Title) > 0 && item.Link != nil && len(item.Link.Href) > 0 {
 			items = append(items, &item)
 		}
 		return len(items) < config.MaxItems
