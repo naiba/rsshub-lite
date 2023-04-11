@@ -11,9 +11,11 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	cbp "github.com/DaRealFreak/cloudflare-bp-go"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -42,6 +44,16 @@ func main() {
 		panic(configRes.Error())
 	}
 	config = configRes.MustGet()
+
+	if config.SentryDsn != nil {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn: *config.SentryDsn,
+		}); err != nil {
+			panic(err)
+		}
+		defer sentry.Flush(2 * time.Second)
+	}
+
 	feedList = loadCache()
 
 	if err := initJobs(); err != nil {
@@ -137,6 +149,13 @@ func initJobs() error {
 
 		fn := func() {
 			if err := refreshFeed(&source); err != nil {
+				hub := sentry.CurrentHub()
+				hub.Scope().SetExtras(
+					map[string]interface{}{
+						"source": source,
+					},
+				)
+				hub.CaptureException(err)
 				log.Printf("[error] refresh feed %s failed: %s\n", source.Name, err)
 			}
 		}

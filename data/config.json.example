@@ -24,5 +24,6 @@
     ],
     "username": "naiba",
     "password": "abian",
-    "max_items": 25
+    "max_items": 25,
+    "sentry_dsn": null
 }
