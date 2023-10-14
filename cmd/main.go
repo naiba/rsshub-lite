@@ -93,6 +93,8 @@ func main() {
 					feedListLock.RUnlock()
 					return content, err
 				}
+			} else {
+				err = fmt.Errorf("feed %s not found", slug)
 			}
 			feedListLock.RUnlock()
 			return content, err
@@ -131,6 +133,18 @@ func loadCache() map[string]*feeds.Feed {
 	var list map[string]*feeds.Feed
 	if err := json.Unmarshal(cacheContent, &list); err != nil {
 		return make(map[string]*feeds.Feed)
+	}
+
+	var slugs = make(map[string]struct{})
+
+	for i := 0; i < len(config.Sources); i++ {
+		slugs[config.Sources[i].Slug] = struct{}{}
+	}
+
+	for k := range list {
+		if _, has := slugs[k]; !has {
+			delete(list, k)
+		}
 	}
 
 	return list
