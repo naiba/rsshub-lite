@@ -6,7 +6,7 @@ require (
 	github.com/DaRealFreak/cloudflare-bp-go v1.0.4
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/getsentry/sentry-go v0.20.0
-	github.com/gofiber/fiber/v2 v2.52.1
+	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gofiber/template v1.7.3
 	github.com/gorilla/feeds v1.1.1
 	github.com/robfig/cron/v3 v3.0.1
