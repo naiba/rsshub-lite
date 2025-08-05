@@ -1,12 +1,12 @@
 module github.com/naiba/rsshub-lite
 
-go 1.19
+go 1.23.0
 
 require (
 	github.com/DaRealFreak/cloudflare-bp-go v1.0.4
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/getsentry/sentry-go v0.20.0
-	github.com/gofiber/fiber/v2 v2.52.5
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/gofiber/template v1.7.3
 	github.com/gorilla/feeds v1.1.1
 	github.com/robfig/cron/v3 v3.0.1
@@ -18,14 +18,14 @@ require (
 
 require (
 	github.com/EDDYCJY/fake-useragent v0.2.0 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
-	github.com/google/uuid v1.5.0 // indirect
-	github.com/klauspost/compress v1.17.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
